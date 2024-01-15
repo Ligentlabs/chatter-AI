@@ -8,9 +8,11 @@ import { SESSION_CHAT_URL } from '@/const/url';
 import { CURRENT_VERSION } from '@/const/version';
 import { globalService } from '@/services/global';
 import type { GlobalStore } from '@/store/global';
+import { SessionGroupItem } from '@/types/session';
 import type { GlobalServerConfig } from '@/types/settings';
 import { merge } from '@/utils/merge';
 import { setNamespace } from '@/utils/storeDebug';
+import { nanoid } from '@/utils/uuid';
 
 import type { GlobalCommonState, GlobalPreference, Guide, SidebarTabKey } from './initialState';
 
@@ -21,6 +23,7 @@ const n = setNamespace('settings');
  */
 export interface CommonAction {
   switchBackToChat: (sessionId?: string) => void;
+  addCustomGroup: (name: string) => string;
   /**
    * 切换侧边栏选项
    * @param key - 选中的侧边栏选项
@@ -29,6 +32,7 @@ export interface CommonAction {
   toggleChatSideBar: (visible?: boolean) => void;
   toggleMobileTopic: (visible?: boolean) => void;
   toggleSystemRole: (visible?: boolean) => void;
+  updateCustomGroup: (groups: SessionGroupItem[]) => void;
   updateGuideState: (guide: Partial<Guide>) => void;
   updatePreference: (preference: Partial<GlobalPreference>, action?: string) => void;
   useCheckLatestVersion: () => SWRResponse<string>;
@@ -43,6 +47,21 @@ export const createCommonSlice: StateCreator<
 > = (set, get) => ({
   switchBackToChat: (sessionId) => {
     get().router?.push(SESSION_CHAT_URL(sessionId || INBOX_SESSION_ID, get().isMobile));
+  },
+  addCustomGroup: (name) => {
+    const sessionCustomGroups = get().preference.sessionCustomGroups || [];
+
+    const groupId = nanoid();
+    const sessionGroupKeys = get().preference.sessionGroupKeys || [];
+    get().updatePreference(
+      {
+        sessionCustomGroups: [...sessionCustomGroups, { id: groupId, name }],
+        sessionGroupKeys: [...sessionGroupKeys, groupId],
+      },
+      'addCustomGroup',
+    );
+
+    return groupId;
   },
   switchSideBar: (key) => {
     set({ sidebarKey: key }, false, n('switchSideBar', key));
@@ -64,6 +83,9 @@ export const createCommonSlice: StateCreator<
       typeof newValue === 'boolean' ? newValue : !get().preference.mobileShowTopic;
 
     get().updatePreference({ showSystemRole }, n('toggleMobileTopic', newValue) as string);
+  },
+  updateCustomGroup: (groups) => {
+    get().updatePreference({ sessionCustomGroups: groups });
   },
   updateGuideState: (guide) => {
     const { updatePreference } = get();

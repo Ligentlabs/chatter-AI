@@ -1,3 +1,5 @@
+import { SessionGroupItem } from '@/types/session';
+
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 export enum SidebarTabKey {
@@ -22,6 +24,7 @@ export interface GlobalPreference {
   guide?: Guide;
   inputHeight: number;
   mobileShowTopic?: boolean;
+  sessionCustomGroups: SessionGroupItem[];
   sessionGroupKeys: string[];
   sessionsWidth: number;
   showChatSideBar?: boolean;
@@ -53,6 +56,7 @@ export const initialCommonState: GlobalCommonState = {
     guide: {},
     inputHeight: 200,
     mobileShowTopic: false,
+    sessionCustomGroups: [],
     sessionGroupKeys: ['pinned', 'sessionList'],
     sessionsWidth: 320,
     showChatSideBar: true,
