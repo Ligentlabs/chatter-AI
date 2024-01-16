@@ -32,7 +32,7 @@ const Actions = memo<ActionsProps>(
     const sessionCustomGroups = useGlobalStore(settingsSelectors.sessionCustomGroups, isEqual);
     const updateCustomGroup = useGlobalStore((s) => s.updateCustomGroup);
 
-    const isCustomGroup = id !== SessionDefaultGroup.Pinned && id !== SessionDefaultGroup.Pinned;
+    const isCustomGroup = id !== SessionDefaultGroup.Default && id !== SessionDefaultGroup.Pinned;
 
     const items: MenuProps['items'] = useMemo(
       () => [
