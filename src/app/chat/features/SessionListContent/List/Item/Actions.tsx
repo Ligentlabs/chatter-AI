@@ -1,14 +1,13 @@
-import { ActionIcon, Icon } from '@lobehub/ui';
-import { App, Dropdown, type MenuProps } from 'antd';
+import { Icon } from '@lobehub/ui';
+import { App, Dropdown, type DropdownProps, type MenuProps } from 'antd';
 import { createStyles } from 'antd-style';
 import isEqual from 'fast-deep-equal';
 import {
+  BetweenHorizontalStart,
   Check,
   HardDriveDownload,
-  ListTree,
   LucideCopy,
   LucidePlus,
-  MoreVertical,
   Pin,
   PinOff,
   Trash,
@@ -16,6 +15,7 @@ import {
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { INBOX_SESSION_ID } from '@/const/session';
 import { configService } from '@/services/config';
 import { useGlobalStore } from '@/store/global';
 import { settingsSelectors } from '@/store/global/selectors';
@@ -30,14 +30,13 @@ const useStyles = createStyles(({ css }) => ({
   `,
 }));
 
-interface ActionProps {
-  group: string | undefined;
+interface ActionProps extends DropdownProps {
+  group?: string;
   id: string;
-  openCreateGroupModal: () => void;
-  setOpen: (open: boolean) => void;
+  openCreateGroupModal?: () => void;
 }
 
-const Actions = memo<ActionProps>(({ group, id, openCreateGroupModal, setOpen }) => {
+const Actions = memo<ActionProps>(({ group, id, openCreateGroupModal, children }) => {
   const { t } = useTranslation('common');
 
   const { styles } = useStyles();
@@ -59,25 +58,27 @@ const Actions = memo<ActionProps>(({ group, id, openCreateGroupModal, setOpen })
   const { modal } = App.useApp();
 
   const isDefault = group === SessionDefaultGroup.Default;
-  // const hasDivider = !isDefault || Object.keys(sessionByGroup).length > 0;
+  const isInbox = id === INBOX_SESSION_ID;
 
   const items: MenuProps['items'] = useMemo(
     () => [
       {
+        disabled: isInbox,
         icon: <Icon icon={pin ? PinOff : Pin} />,
         key: 'pin',
         label: t(pin ? 'pinOff' : 'pin'),
-        onClick: () => {
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
           pinSession(id, !pin);
         },
       },
       {
+        disabled: isInbox,
         icon: <Icon icon={LucideCopy} />,
         key: 'duplicate',
         label: t('duplicate'),
         onClick: ({ domEvent }) => {
           domEvent.stopPropagation();
-
           duplicateSession(id);
         },
       },
@@ -111,13 +112,20 @@ const Actions = memo<ActionProps>(({ group, id, openCreateGroupModal, setOpen })
             label: <div>{t('group.createGroup')}</div>,
             onClick: ({ domEvent }) => {
               domEvent.stopPropagation();
-              openCreateGroupModal();
+              openCreateGroupModal?.();
             },
           },
         ],
-        icon: <Icon icon={ListTree} />,
+        disabled: isInbox,
+        icon: <Icon icon={BetweenHorizontalStart} />,
         key: 'moveGroup',
         label: t('group.moveGroup'),
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+        },
+        onTitleClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+        },
       },
       {
         type: 'divider',
@@ -142,9 +150,16 @@ const Actions = memo<ActionProps>(({ group, id, openCreateGroupModal, setOpen })
         icon: <Icon icon={HardDriveDownload} />,
         key: 'export',
         label: t('export'),
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+        },
+        onTitleClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+        },
       },
       {
         danger: true,
+        disabled: isInbox,
         icon: <Icon icon={Trash} />,
         key: 'delete',
         label: t('delete'),
@@ -170,20 +185,10 @@ const Actions = memo<ActionProps>(({ group, id, openCreateGroupModal, setOpen })
       arrow={false}
       menu={{
         items,
-        onClick: ({ domEvent }) => {
-          domEvent.stopPropagation();
-        },
       }}
-      onOpenChange={setOpen}
-      trigger={['click']}
+      trigger={['contextMenu']}
     >
-      <ActionIcon
-        icon={MoreVertical}
-        size={{
-          blockSize: 28,
-          fontSize: 16,
-        }}
-      />
+      {children}
     </Dropdown>
   );
 });
