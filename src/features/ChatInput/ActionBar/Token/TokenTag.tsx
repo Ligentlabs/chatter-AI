@@ -47,7 +47,12 @@ const Token = memo(() => {
   return (
     <Tooltip
       placement={'bottom'}
-      title={t('tokenDetail', { chatsToken, systemRoleToken, toolsToken })}
+      title={t('tokenDetail', {
+        chatsToken,
+        inputToken: inputTokenCount,
+        systemRoleToken,
+        toolsToken,
+      })}
     >
       <TokenTag
         maxValue={ModelTokens[model]}

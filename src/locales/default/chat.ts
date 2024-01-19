@@ -55,7 +55,7 @@ export default {
   },
   temp: '临时',
   tokenDetail:
-    '角色设定: {{systemRoleToken}} · 会话消息: {{chatsToken}} · 工具设定: {{toolsToken}}',
+    '角色设定: {{systemRoleToken}} · 工具设定: {{toolsToken}} · 输入消息: {{inputToken}} · 会话消息: {{chatsToken}}',
   tokenTag: {
     overload: '超过限制',
     remained: '剩余',
