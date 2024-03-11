@@ -84,7 +84,7 @@ class SyncBus {
       const pools = Array.from(event.keys).map(async ([id, payload]) => {
         const item: any = yItemMap.get(id);
 
-        if (item._internalUpdate) {
+        if (item?._internalUpdate) {
           return;
         }
 
