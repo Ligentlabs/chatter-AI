@@ -25,9 +25,11 @@ export interface GlobalCommonState {
   latestVersion?: string;
   router?: AppRouterInstance;
   sidebarKey: SidebarTabKey;
+  syncEnabled: boolean;
 }
 
 export const initialCommonState: GlobalCommonState = {
   isMobile: false,
   sidebarKey: SidebarTabKey.Chat,
+  syncEnabled: false,
 };

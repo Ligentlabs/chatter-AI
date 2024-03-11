@@ -24,6 +24,7 @@ const n = setNamespace('common');
  * 设置操作
  */
 export interface CommonAction {
+  enabledSync: () => Promise<void>;
   refreshUserConfig: () => Promise<void>;
   switchBackToChat: (sessionId?: string) => void;
   updateAvatar: (avatar: string) => Promise<void>;
@@ -41,13 +42,19 @@ export const createCommonSlice: StateCreator<
   [],
   CommonAction
 > = (set, get) => ({
+  enabledSync: async () => {
+    set({ syncEnabled: false });
+    await globalService.enabledSync();
+    set({ syncEnabled: true });
+  },
+
   refreshUserConfig: async () => {
     await mutate([USER_CONFIG_FETCH_KEY, true]);
   },
+
   switchBackToChat: (sessionId) => {
     get().router?.push(SESSION_CHAT_URL(sessionId || INBOX_SESSION_ID, get().isMobile));
   },
-
   updateAvatar: async (avatar) => {
     await userService.updateAvatar(avatar);
     await get().refreshUserConfig();

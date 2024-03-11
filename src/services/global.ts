@@ -1,3 +1,4 @@
+import { syncBus } from '@/libs/sync';
 import { GlobalServerConfig } from '@/types/settings';
 
 import { API_ENDPOINTS } from './_url';
@@ -19,6 +20,10 @@ class GlobalService {
     const res = await fetch(API_ENDPOINTS.config);
 
     return res.json();
+  };
+
+  enabledSync = async () => {
+    await syncBus.startDataSync({ name: 'abc' });
   };
 }
 

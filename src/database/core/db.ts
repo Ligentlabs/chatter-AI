@@ -13,7 +13,7 @@ import { migrateSettingsToUser } from './migrations/migrateSettingsToUser';
 import { dbSchemaV1, dbSchemaV2, dbSchemaV3, dbSchemaV4, dbSchemaV5, dbSchemaV6 } from './schemas';
 import { DBModel, LOBE_CHAT_LOCAL_DB_NAME } from './types/db';
 
-interface LobeDBSchemaMap {
+export interface LobeDBSchemaMap {
   files: DB_File;
   messages: DB_Message;
   plugins: DB_Plugin;
