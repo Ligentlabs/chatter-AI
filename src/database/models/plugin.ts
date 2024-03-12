@@ -7,10 +7,12 @@ class _PluginModel extends BaseModel {
   constructor() {
     super('plugins', DB_PluginSchema);
   }
+  // **************** Query *************** //
 
   getList = async (): Promise<DB_Plugin[]> => {
     return this.table.toArray();
   };
+  // **************** Create *************** //
 
   create = async (plugin: DB_Plugin) => {
     const old = await this.table.get(plugin.identifier);
@@ -21,18 +23,20 @@ class _PluginModel extends BaseModel {
   batchCreate = async (plugins: DB_Plugin[]) => {
     return this._batchAdd(plugins);
   };
+  // **************** Delete *************** //
 
   delete(id: string) {
-    return this.table.delete(id);
+    return this._deleteWithSync(id);
   }
+  clear() {
+    return this._clearWithSync();
+  }
+
+  // **************** Update *************** //
 
   update: (id: string, value: Partial<DB_Plugin>) => Promise<number> = async (id, value) => {
     return this.table.update(id, value);
   };
-
-  clear() {
-    return this.table.clear();
-  }
 }
 
 export const PluginModel = new _PluginModel();

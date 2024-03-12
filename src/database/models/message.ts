@@ -152,7 +152,7 @@ class _MessageModel extends BaseModel {
   }
 
   async clearTable() {
-    return this.table.clear();
+    return this._clearWithSync();
   }
 
   /**
