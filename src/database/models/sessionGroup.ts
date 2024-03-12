@@ -9,7 +9,7 @@ class _SessionGroupModel extends BaseModel {
   }
 
   async create(name: string, sort?: number, id = nanoid()) {
-    return this._add({ name, sort }, id);
+    return this._addWithSync({ name, sort }, id);
   }
   async batchCreate(groups: SessionGroups) {
     return this._batchAdd(groups, { idGenerator: nanoid });
@@ -20,7 +20,7 @@ class _SessionGroupModel extends BaseModel {
   }
 
   async update(id: string, data: Partial<DB_SessionGroup>) {
-    return super._update(id, data);
+    return super._updateWithSync(id, data);
   }
 
   async delete(id: string, removeGroupItem: boolean = false) {

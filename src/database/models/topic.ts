@@ -24,7 +24,10 @@ class _TopicModel extends BaseModel {
   }
 
   async create({ title, favorite, sessionId, messages }: CreateTopicParams, id = nanoid()) {
-    const topic = await this._add({ favorite: favorite ? 1 : 0, sessionId, title: title }, id);
+    const topic = await this._addWithSync(
+      { favorite: favorite ? 1 : 0, sessionId, title: title },
+      id,
+    );
 
     // add topicId to these messages
     if (messages) {
@@ -105,7 +108,7 @@ class _TopicModel extends BaseModel {
   }
 
   async update(id: string, data: Partial<DB_Topic>) {
-    return super._update(id, { ...data, updatedAt: Date.now() });
+    return super._updateWithSync(id, { ...data, updatedAt: Date.now() });
   }
 
   async toggleFavorite(id: string, newState?: boolean) {

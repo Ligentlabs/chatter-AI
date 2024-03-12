@@ -6,6 +6,7 @@ import type { StateCreator } from 'zustand/vanilla';
 import { INBOX_SESSION_ID } from '@/const/session';
 import { SESSION_CHAT_URL } from '@/const/url';
 import { CURRENT_VERSION } from '@/const/version';
+import { OnSyncEvent } from '@/libs/sync';
 import { globalService } from '@/services/global';
 import { messageService } from '@/services/message';
 import { UserConfig, userService } from '@/services/user';
@@ -24,12 +25,12 @@ const n = setNamespace('common');
  * 设置操作
  */
 export interface CommonAction {
-  enabledSync: () => Promise<void>;
   refreshUserConfig: () => Promise<void>;
   switchBackToChat: (sessionId?: string) => void;
   updateAvatar: (avatar: string) => Promise<void>;
   useCheckLatestVersion: () => SWRResponse<string>;
   useCheckTrace: (shouldFetch: boolean) => SWRResponse;
+  useEnabledSync: (onEvent: OnSyncEvent) => SWRResponse;
   useFetchServerConfig: () => SWRResponse;
   useFetchUserConfig: (initServer: boolean) => SWRResponse<UserConfig | undefined>;
 }
@@ -42,12 +43,6 @@ export const createCommonSlice: StateCreator<
   [],
   CommonAction
 > = (set, get) => ({
-  enabledSync: async () => {
-    set({ syncEnabled: false });
-    await globalService.enabledSync();
-    set({ syncEnabled: true });
-  },
-
   refreshUserConfig: async () => {
     await mutate([USER_CONFIG_FETCH_KEY, true]);
   },
@@ -55,6 +50,7 @@ export const createCommonSlice: StateCreator<
   switchBackToChat: (sessionId) => {
     get().router?.push(SESSION_CHAT_URL(sessionId || INBOX_SESSION_ID, get().isMobile));
   },
+
   updateAvatar: async (avatar) => {
     await userService.updateAvatar(avatar);
     await get().refreshUserConfig();
@@ -85,6 +81,13 @@ export const createCommonSlice: StateCreator<
         revalidateOnFocus: false,
       },
     ),
+  useEnabledSync: (onEvent) =>
+    useSWR('enableSync', async () => globalService.enabledSync(onEvent), {
+      onSuccess: () => {
+        set({ syncEnabled: true });
+      },
+      revalidateOnFocus: false,
+    }),
   useFetchServerConfig: () =>
     useSWR<GlobalServerConfig>('fetchGlobalConfig', globalService.getGlobalConfig, {
       onSuccess: (data) => {

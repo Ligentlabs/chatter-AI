@@ -25,6 +25,8 @@ import { MessageDispatch, messagesReducer } from './reducer';
 
 const n = setNamespace('message');
 
+const SWR_USE_FETCH_MESSAGES = 'SWR_USE_FETCH_MESSAGES';
+
 interface SendMessageParams {
   message: string;
   files?: { id: string; url: string }[];
@@ -275,8 +277,8 @@ export const chatMessage: StateCreator<
   },
   useFetchMessages: (sessionId, activeTopicId) =>
     useSWR<ChatMessage[]>(
-      [sessionId, activeTopicId],
-      async ([sessionId, topicId]: [string, string | undefined]) =>
+      [SWR_USE_FETCH_MESSAGES, sessionId, activeTopicId],
+      async ([, sessionId, topicId]: [string, string, string | undefined]) =>
         messageService.getMessages(sessionId, topicId),
       {
         onSuccess: (messages, key) => {
@@ -293,10 +295,12 @@ export const chatMessage: StateCreator<
         // Cause issue like this: https://github.com/lobehub/lobe-chat/issues/532
         // we need to set it to 0.
         dedupingInterval: 0,
+        revalidateOnFocus: false,
+        // revalidateOnReconnect: false,
       },
     ),
   refreshMessages: async () => {
-    await mutate([get().activeId, get().activeTopicId]);
+    await mutate([SWR_USE_FETCH_MESSAGES, get().activeId, get().activeTopicId]);
   },
 
   // the internal process method of the AI message

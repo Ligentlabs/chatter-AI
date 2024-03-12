@@ -1,118 +1,102 @@
-import isEqual from 'fast-deep-equal';
-import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
-import { Doc, Map } from 'yjs';
+import { Doc } from 'yjs';
 
 import { LocalDBInstance } from '@/database/core';
 import { LobeDBSchemaMap } from '@/database/core/db';
 
+export type OnSyncEvent = (
+  tableKey: keyof LobeDBSchemaMap,
+  id: string,
+  payload: { action: 'add' | 'update' | 'delete' },
+) => void;
+
 interface StartDataSyncParams {
   name?: string;
+  onEvent?: OnSyncEvent;
   onInit?: () => void;
   password?: string;
 }
 class SyncBus {
-  private ydoc: Doc;
+  ydoc: Doc;
 
   constructor() {
     this.ydoc = new Y.Doc();
   }
 
-  startDataSync = async ({ name, password, onInit }: StartDataSyncParams) => {
-    // this.loadDataFromDBtoYjs('users');
-    // if need file should dependon the file module
-    // this.loadDataFromDBtoYjs('files');
+  getYMap = (tableKey: keyof LobeDBSchemaMap) => {
+    return this.ydoc.getMap(tableKey);
+  };
 
-    console.log('start init yjs...');
+  loadData = async (onEvent?: OnSyncEvent) => {
     await Promise.all([
-      this.loadDataFromDBtoYjs('sessions'),
-      this.loadDataFromDBtoYjs('sessionGroups'),
-      this.loadDataFromDBtoYjs('topics'),
-      this.loadDataFromDBtoYjs('messages'),
-      this.loadDataFromDBtoYjs('plugins'),
+      this.loadDataFromDBtoYjs('sessions', onEvent),
+      this.loadDataFromDBtoYjs('sessionGroups', onEvent),
+      this.loadDataFromDBtoYjs('topics', onEvent),
+      this.loadDataFromDBtoYjs('messages', onEvent),
+      this.loadDataFromDBtoYjs('plugins', onEvent),
     ]);
-    onInit?.();
-    console.log('yjs init success');
+  };
 
+  startDataSync = async ({ name, password, onInit, onEvent }: StartDataSyncParams) => {
     // clients connected to the same room-name share document updates
     const provider = new WebrtcProvider(name || 'abc', this.ydoc, {
       password: password,
+      signaling: ['wss://y-webrtc-signaling.lobehub.com'],
     });
 
-    const persistence = new IndexeddbPersistence('lobechat-data-sync', this.ydoc);
-
-    provider.on('synced', () => {
+    provider.on('synced', async () => {
       console.log('WebrtcProvider: synced');
+      console.log('start init data...');
+      await this.loadData(onEvent);
+      onInit?.();
+      console.log('yjs init success');
     });
 
-    persistence.on('synced', () => {
-      console.log('IndexeddbPersistence: synced');
+    provider.on('peers', async (arg0) => {
+      console.log(arg0);
     });
   };
 
-  internalUpdateYMap = (ymap: Map<any>, key: string, item: any) => {
-    ymap.set(key, { ...item, _internalUpdate: true });
-  };
-
-  loadDataFromDBtoYjs = async (tableKey: keyof LobeDBSchemaMap) => {
+  loadDataFromDBtoYjs = async (tableKey: keyof LobeDBSchemaMap, onEvent?: OnSyncEvent) => {
     const table = LocalDBInstance[tableKey];
     const items = await table.toArray();
     const yItemMap = this.ydoc.getMap(tableKey);
-    items.forEach((item) => {
-      this.internalUpdateYMap(yItemMap, item.id, item);
-    });
-
-    table.hook('creating', (primaryKey, item) => {
-      console.log(tableKey, 'creating', primaryKey, item);
-      yItemMap.set(primaryKey, item);
-    });
-    table.hook('updating', (item, primaryKey) => {
-      console.log('[DB]', tableKey, 'updating', primaryKey, item);
-      yItemMap.set(primaryKey, item);
-    });
-    table.hook('deleting', (primaryKey) => {
-      console.log(tableKey, 'deleting', primaryKey);
-      yItemMap.delete(primaryKey);
-    });
 
     yItemMap.observe(async (event) => {
       // abort local change
       if (event.transaction.local) return;
 
-      console.log(tableKey, ':', event.keysChanged);
+      // console.log(`observe ${tableKey} changes:`, event.keysChanged.size);
       const pools = Array.from(event.keys).map(async ([id, payload]) => {
         const item: any = yItemMap.get(id);
 
-        if (item?._internalUpdate) {
-          return;
-        }
-
         switch (payload.action) {
-          case 'add': {
-            console.log('新增：', payload);
-
-            break;
-          }
+          case 'add':
           case 'update': {
-            console.log(id, payload.newValue, payload.oldValue);
-            const item: any = yItemMap.get(id);
-            console.log('nextValue', item);
-            const current = await table.get(id);
-
-            // 如果相等则不更新
-            if (isEqual(item, current)) return;
-
-            await table.update(id, item);
+            const itemInTable = await table.get(id);
+            console.log('itemInTable', itemInTable);
+            if (!itemInTable) {
+              await table.add(item, id);
+            } else {
+              await table.update(id, item);
+            }
             break;
           }
           case 'delete': {
+            await table.delete(id);
             break;
           }
         }
+
+        onEvent?.(tableKey, id, payload);
       });
 
       await Promise.all(pools);
+    });
+
+    items.forEach((item) => {
+      yItemMap.set(item.id, { ...item, _internalUpdate: true });
     });
   };
 }
