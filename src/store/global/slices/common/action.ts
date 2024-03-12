@@ -11,8 +11,10 @@ import { globalService } from '@/services/global';
 import { messageService } from '@/services/message';
 import { UserConfig, userService } from '@/services/user';
 import type { GlobalStore } from '@/store/global';
+import { SyncAwarenessState } from '@/store/global/slices/common/initialState';
 import type { GlobalServerConfig, GlobalSettings } from '@/types/settings';
 import { merge } from '@/utils/merge';
+import { browserInfo } from '@/utils/platform';
 import { setNamespace } from '@/utils/storeDebug';
 import { switchLang } from '@/utils/switchLang';
 
@@ -30,7 +32,7 @@ export interface CommonAction {
   updateAvatar: (avatar: string) => Promise<void>;
   useCheckLatestVersion: () => SWRResponse<string>;
   useCheckTrace: (shouldFetch: boolean) => SWRResponse;
-  useEnabledSync: (onEvent: OnSyncEvent) => SWRResponse;
+  useEnabledSync: (userId: string | undefined, onEvent: OnSyncEvent) => SWRResponse;
   useFetchServerConfig: () => SWRResponse;
   useFetchUserConfig: (initServer: boolean) => SWRResponse<UserConfig | undefined>;
 }
@@ -81,17 +83,32 @@ export const createCommonSlice: StateCreator<
         revalidateOnFocus: false,
       },
     ),
-  useEnabledSync: (onEvent) =>
+  useEnabledSync: (userId, onEvent) =>
     useSWR<boolean>(
-      'enableSync',
-      async () =>
-        globalService.enabledSync({
-          name: 'abc',
+      ['enableSync', userId],
+      async () => {
+        if (!userId) return false;
+
+        return globalService.enabledSync({
+          channel: {
+            name: 'abc',
+            // password: '',
+          },
           onEvent,
+          onPeersChange(state: SyncAwarenessState[]) {
+            console.log('syncAwareness Changes:', state);
+            set({ syncAwareness: state });
+          },
           onSync: (status) => {
             set({ syncStatus: status });
           },
-        }),
+          user: {
+            id: get().userId,
+            name: get().userId,
+            ...browserInfo,
+          },
+        });
+      },
       {
         onSuccess: (syncEnabled) => {
           set({ syncEnabled });

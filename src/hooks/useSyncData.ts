@@ -3,14 +3,12 @@ import { useGlobalStore } from '@/store/global';
 import { useSessionStore } from '@/store/session';
 
 export const useEnabledDataSync = () => {
-  const [useEnabledSync] = useGlobalStore((s) => [s.useEnabledSync]);
+  const [userId, useEnabledSync] = useGlobalStore((s) => [s.userId, s.useEnabledSync]);
 
   const [refreshMessages, refreshTopic] = useChatStore((s) => [s.refreshMessages, s.refreshTopic]);
   const [refreshSessions] = useSessionStore((s) => [s.refreshSessions]);
 
-  useEnabledSync((tableKey) => {
-    console.log(`detect ${tableKey} updated. Refreshing...`);
-
+  useEnabledSync(userId, (tableKey) => {
     switch (tableKey) {
       case 'messages': {
         refreshMessages();

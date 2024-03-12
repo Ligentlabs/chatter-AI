@@ -7,10 +7,17 @@ import { LobeDBSchemaMap } from '@/database/core/db';
 export type OnSyncEvent = (tableKey: keyof LobeDBSchemaMap) => void;
 
 export interface StartDataSyncParams {
-  name: string;
+  channel: {
+    name: string;
+    password?: string;
+  };
   onEvent: OnSyncEvent;
+  onPeersChange: (peer: any) => void;
   onSync: (status: 'syncing' | 'synced') => void;
-  password?: string;
+  user: {
+    id?: string;
+    name?: string;
+  };
 }
 
 let provider: WebrtcProvider;
@@ -22,13 +29,19 @@ class SyncBus {
     this.ydoc = new Doc();
   }
 
-  startDataSync = async ({ name, password, onEvent, onSync }: StartDataSyncParams) => {
+  startDataSync = async ({
+    channel,
+    onEvent,
+    onSync,
+    user,
+    onPeersChange,
+  }: StartDataSyncParams) => {
     // 针对 dev 场景下，provider 会重置，不做二次初始化
     if (provider) return;
 
     // clients connected to the same room-name share document updates
-    provider = new WebrtcProvider(name, this.ydoc, {
-      password: password,
+    provider = new WebrtcProvider(channel.name, this.ydoc, {
+      password: channel.password,
       signaling: ['wss://y-webrtc-signaling.lobehub.com'],
     });
 
@@ -49,6 +62,20 @@ class SyncBus {
         console.log('yjs init success');
         onSync?.('synced');
       }
+    });
+
+    const awareness = provider.awareness;
+
+    awareness.setLocalState({ clientID: awareness.clientID, user });
+
+    awareness.on('change', () => {
+      const state = Array.from(awareness.getStates().values());
+      console.log('awareness:', state, awareness.clientID);
+      onPeersChange?.(
+        state.map((s) => {
+          return { ...s.user, current: s.clientID === awareness.clientID };
+        }),
+      );
     });
   };
 
