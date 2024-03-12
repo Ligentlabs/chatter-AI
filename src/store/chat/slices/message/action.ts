@@ -2,12 +2,13 @@
 // Disable the auto sort key eslint rule to make the code more logic and readable
 import { copyToClipboard } from '@lobehub/ui';
 import { template } from 'lodash-es';
-import useSWR, { SWRResponse, mutate } from 'swr';
+import { SWRResponse, mutate } from 'swr';
 import { StateCreator } from 'zustand/vanilla';
 
 import { LOADING_FLAT, isFunctionMessageAtStart, testFunctionMessageAtEnd } from '@/const/message';
 import { TraceEventType, TraceNameMap } from '@/const/trace';
 import { CreateMessageParams } from '@/database/models/message';
+import { useClientDataSWR } from '@/libs/swr';
 import { chatService } from '@/services/chat';
 import { messageService } from '@/services/message';
 import { topicService } from '@/services/topic';
@@ -276,7 +277,7 @@ export const chatMessage: StateCreator<
     await get().internalUpdateMessageContent(id, content);
   },
   useFetchMessages: (sessionId, activeTopicId) =>
-    useSWR<ChatMessage[]>(
+    useClientDataSWR<ChatMessage[]>(
       [SWR_USE_FETCH_MESSAGES, sessionId, activeTopicId],
       async ([, sessionId, topicId]: [string, string, string | undefined]) =>
         messageService.getMessages(sessionId, topicId),
@@ -291,12 +292,6 @@ export const chatMessage: StateCreator<
             }),
           );
         },
-        // default is 2000ms ,it makes the user's quick switch don't work correctly.
-        // Cause issue like this: https://github.com/lobehub/lobe-chat/issues/532
-        // we need to set it to 0.
-        dedupingInterval: 0,
-        revalidateOnFocus: false,
-        // revalidateOnReconnect: false,
       },
     ),
   refreshMessages: async () => {
