@@ -82,12 +82,23 @@ export const createCommonSlice: StateCreator<
       },
     ),
   useEnabledSync: (onEvent) =>
-    useSWR('enableSync', async () => globalService.enabledSync(onEvent), {
-      onSuccess: () => {
-        set({ syncEnabled: true });
+    useSWR<boolean>(
+      'enableSync',
+      async () =>
+        globalService.enabledSync({
+          name: 'abc',
+          onEvent,
+          onSync: (status) => {
+            set({ syncStatus: status });
+          },
+        }),
+      {
+        onSuccess: (syncEnabled) => {
+          set({ syncEnabled });
+        },
+        revalidateOnFocus: false,
       },
-      revalidateOnFocus: false,
-    }),
+    ),
   useFetchServerConfig: () =>
     useSWR<GlobalServerConfig>('fetchGlobalConfig', globalService.getGlobalConfig, {
       onSuccess: (data) => {

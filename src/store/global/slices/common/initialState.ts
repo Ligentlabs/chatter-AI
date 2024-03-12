@@ -26,6 +26,7 @@ export interface GlobalCommonState {
   router?: AppRouterInstance;
   sidebarKey: SidebarTabKey;
   syncEnabled: boolean;
+  syncStatus?: 'syncing' | 'synced' | 'hold';
 }
 
 export const initialCommonState: GlobalCommonState = {

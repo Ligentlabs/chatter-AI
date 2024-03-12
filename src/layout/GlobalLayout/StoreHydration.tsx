@@ -2,6 +2,7 @@ import { useResponsive } from 'antd-style';
 import { useRouter } from 'next/navigation';
 import { memo, useEffect } from 'react';
 
+import { useEnabledDataSync } from '@/hooks/useSyncData';
 import { useGlobalStore } from '@/store/global';
 import { useEffectAfterGlobalHydrated } from '@/store/global/hooks/useEffectAfterHydrated';
 
@@ -10,6 +11,8 @@ const StoreHydration = memo(() => {
     s.useFetchServerConfig,
     s.useFetchUserConfig,
   ]);
+  useEnabledDataSync();
+
   const { isLoading } = useFetchServerConfig();
 
   useFetchUserConfig(!isLoading);

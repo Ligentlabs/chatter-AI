@@ -1,67 +1,74 @@
 import { WebrtcProvider } from 'y-webrtc';
-import * as Y from 'yjs';
 import { Doc } from 'yjs';
 
 import { LocalDBInstance } from '@/database/core';
 import { LobeDBSchemaMap } from '@/database/core/db';
 
-export type OnSyncEvent = (
-  tableKey: keyof LobeDBSchemaMap,
-  id: string,
-  payload: { action: 'add' | 'update' | 'delete' },
-) => void;
+export type OnSyncEvent = (tableKey: keyof LobeDBSchemaMap) => void;
 
-interface StartDataSyncParams {
-  name?: string;
-  onEvent?: OnSyncEvent;
-  onInit?: () => void;
+export interface StartDataSyncParams {
+  name: string;
+  onEvent: OnSyncEvent;
+  onSync: (status: 'syncing' | 'synced') => void;
   password?: string;
 }
+
 class SyncBus {
   ydoc: Doc;
 
   constructor() {
-    this.ydoc = new Y.Doc();
+    this.ydoc = new Doc();
   }
+
+  startDataSync = async ({ name, password, onEvent, onSync }: StartDataSyncParams) => {
+    // clients connected to the same room-name share document updates
+    const provider = new WebrtcProvider(name, this.ydoc, {
+      password: password,
+      signaling: ['wss://y-webrtc-signaling.lobehub.com'],
+    });
+
+    provider.on('synced', async ({ synced }) => {
+      if (synced) {
+        console.log('WebrtcProvider: synced');
+        // this.initObserve(onEvent);
+      }
+    });
+
+    provider.on('status', async ({ connected }) => {
+      // 当开始连接，则初始化数据
+      if (connected) {
+        onSync?.('syncing');
+        console.log('start init data...');
+        this.initObserve(onEvent);
+        await this.initSync();
+        console.log('yjs init success');
+        onSync?.('synced');
+      }
+    });
+  };
 
   getYMap = (tableKey: keyof LobeDBSchemaMap) => {
     return this.ydoc.getMap(tableKey);
   };
 
-  loadData = async (onEvent?: OnSyncEvent) => {
-    await Promise.all([
-      this.loadDataFromDBtoYjs('sessions', onEvent),
-      this.loadDataFromDBtoYjs('sessionGroups', onEvent),
-      this.loadDataFromDBtoYjs('topics', onEvent),
-      this.loadDataFromDBtoYjs('messages', onEvent),
-      this.loadDataFromDBtoYjs('plugins', onEvent),
-    ]);
+  private initSync = async () => {
+    await Promise.all(
+      ['sessions', 'sessionGroups', 'topics', 'messages', 'plugins'].map(async (tableKey) => {
+        return this.loadDataFromDBtoYjs(tableKey as keyof LobeDBSchemaMap);
+      }),
+    );
   };
 
-  startDataSync = async ({ name, password, onInit, onEvent }: StartDataSyncParams) => {
-    // clients connected to the same room-name share document updates
-    const provider = new WebrtcProvider(name || 'abc', this.ydoc, {
-      password: password,
-      signaling: ['wss://y-webrtc-signaling.lobehub.com'],
-    });
-
-    provider.on('synced', async () => {
-      console.log('WebrtcProvider: synced');
-      console.log('start init data...');
-      await this.loadData(onEvent);
-      onInit?.();
-      console.log('yjs init success');
-    });
-
-    provider.on('peers', async (arg0) => {
-      console.log(arg0);
+  private initObserve = (onEvent: OnSyncEvent) => {
+    ['sessions', 'sessionGroups', 'topics', 'messages', 'plugins'].forEach((tableKey) => {
+      // listen yjs change
+      this.observeYMapChange(tableKey as keyof LobeDBSchemaMap, onEvent);
     });
   };
 
-  loadDataFromDBtoYjs = async (tableKey: keyof LobeDBSchemaMap, onEvent?: OnSyncEvent) => {
+  private observeYMapChange = (tableKey: keyof LobeDBSchemaMap, onEvent: OnSyncEvent) => {
     const table = LocalDBInstance[tableKey];
-    const items = await table.toArray();
-    const yItemMap = this.ydoc.getMap(tableKey);
+    const yItemMap = this.getYMap(tableKey);
 
     yItemMap.observe(async (event) => {
       // abort local change
@@ -75,7 +82,6 @@ class SyncBus {
           case 'add':
           case 'update': {
             const itemInTable = await table.get(id);
-            console.log('itemInTable', itemInTable);
             if (!itemInTable) {
               await table.add(item, id);
             } else {
@@ -83,20 +89,27 @@ class SyncBus {
             }
             break;
           }
+
           case 'delete': {
             await table.delete(id);
             break;
           }
         }
-
-        onEvent?.(tableKey, id, payload);
       });
 
       await Promise.all(pools);
+      onEvent?.(tableKey);
     });
+  };
+
+  private loadDataFromDBtoYjs = async (tableKey: keyof LobeDBSchemaMap) => {
+    const table = LocalDBInstance[tableKey];
+    const items = await table.toArray();
+    const yItemMap = this.getYMap(tableKey);
 
     items.forEach((item) => {
-      yItemMap.set(item.id, { ...item, _internalUpdate: true });
+      // TODO: 需要改表，所有 table 都需要有 id 字段
+      yItemMap.set(item.id || (item as any).identifier, item);
     });
   };
 }

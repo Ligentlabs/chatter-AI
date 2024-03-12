@@ -8,8 +8,8 @@ export const useEnabledDataSync = () => {
   const [refreshMessages, refreshTopic] = useChatStore((s) => [s.refreshMessages, s.refreshTopic]);
   const [refreshSessions] = useSessionStore((s) => [s.refreshSessions]);
 
-  useEnabledSync((tableKey, id, payload) => {
-    console.log(`[${tableKey}] detect ${payload.action}:`, id);
+  useEnabledSync((tableKey) => {
+    console.log(`detect ${tableKey} updated. Refreshing...`);
 
     switch (tableKey) {
       case 'messages': {

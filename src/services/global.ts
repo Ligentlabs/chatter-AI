@@ -1,4 +1,4 @@
-import { OnSyncEvent, syncBus } from '@/libs/sync';
+import { StartDataSyncParams, syncBus } from '@/libs/sync';
 import { GlobalServerConfig } from '@/types/settings';
 
 import { API_ENDPOINTS } from './_url';
@@ -22,8 +22,11 @@ class GlobalService {
     return res.json();
   };
 
-  enabledSync = async (onEvent: OnSyncEvent) => {
-    await syncBus.startDataSync({ name: 'abc', onEvent });
+  enabledSync = async (params: StartDataSyncParams) => {
+    if (typeof window === 'undefined') return false;
+
+    await syncBus.startDataSync(params);
+    return true;
   };
 }
 
