@@ -225,7 +225,7 @@ class _SessionModel extends BaseModel {
       }
 
       // Finally, delete the session itself
-      await this.table.delete(id);
+      await this._deleteWithSync(id);
     });
   }
 

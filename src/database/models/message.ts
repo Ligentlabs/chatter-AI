@@ -178,7 +178,7 @@ class _MessageModel extends BaseModel {
     const messageIds = await query.primaryKeys();
 
     // Use the bulkDelete method to delete all selected messages in bulk
-    return this.table.bulkDelete(messageIds);
+    return this._bulkDeleteWithSync(messageIds);
   }
 
   // **************** Update *************** //

@@ -13,16 +13,21 @@ export interface StartDataSyncParams {
   password?: string;
 }
 
+let provider: WebrtcProvider;
+
 class SyncBus {
-  ydoc: Doc;
+  private ydoc: Doc;
 
   constructor() {
     this.ydoc = new Doc();
   }
 
   startDataSync = async ({ name, password, onEvent, onSync }: StartDataSyncParams) => {
+    // 针对 dev 场景下，provider 会重置，不做二次初始化
+    if (provider) return;
+
     // clients connected to the same room-name share document updates
-    const provider = new WebrtcProvider(name, this.ydoc, {
+    provider = new WebrtcProvider(name, this.ydoc, {
       password: password,
       signaling: ['wss://y-webrtc-signaling.lobehub.com'],
     });

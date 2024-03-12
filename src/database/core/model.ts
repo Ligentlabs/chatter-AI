@@ -187,6 +187,22 @@ export class BaseModel<N extends keyof LocalDBSchema = any, T = LocalDBSchema[N]
     return result;
   }
 
+  protected async _bulkDeleteWithSync(keys: string[]) {
+    await this.table.bulkDelete(keys);
+    // sync delete data to yjs data map
+
+    keys.forEach((id) => {
+      this.yMap.delete(id);
+    });
+  }
+
+  protected async _clearWithSync() {
+    const result = await this.table.clear();
+    // sync clear data to yjs data map
+    this.yMap.clear();
+    return result;
+  }
+
   private updateYMapItem = async (id: string) => {
     const newData = await this.table.get(id);
     this.yMap.set(id, newData);
