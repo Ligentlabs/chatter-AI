@@ -1,7 +1,8 @@
-import { Icon } from '@lobehub/ui';
-import { Popover, Tag } from 'antd';
-import { createStyles } from 'antd-style';
-import { LucideCheck, LucideRefreshCw } from 'lucide-react';
+import { Avatar, Icon } from '@lobehub/ui';
+import { Popover, Tag, Typography } from 'antd';
+import { createStyles, useTheme } from 'antd-style';
+import isEqual from 'fast-deep-equal';
+import { LucideCheck, LucideLaptop, LucideRefreshCw, LucideSmartphone } from 'lucide-react';
 import { memo } from 'react';
 import { Flexbox } from 'react-layout-kit';
 
@@ -22,16 +23,48 @@ const SyncStatusTag = memo(() => {
     s.syncStatus === 'syncing',
     s.syncEnabled,
   ]);
+  const users = useGlobalStore((s) => s.syncAwareness, isEqual);
 
+  const theme = useTheme();
   return (
     syncEnabled && (
       <Popover
+        arrow={false}
         content={
-          <Flexbox>
-            <div>同步中</div>
+          <Flexbox gap={12}>
+            {users.map((user) => (
+              <Flexbox gap={12} horizontal key={user.clientID}>
+                <Avatar
+                  avatar={
+                    <Icon
+                      color={theme.purple}
+                      icon={user.isMobile ? LucideSmartphone : LucideLaptop}
+                      size={{ fontSize: 24 }}
+                    />
+                  }
+                  background={theme.purple1}
+                  shape={'square'}
+                />
+
+                <Flexbox>
+                  <Flexbox gap={8} horizontal>
+                    {user.name || user.id}
+                    {user.current && (
+                      <Tag bordered={false} color={'blue'}>
+                        current
+                      </Tag>
+                    )}
+                  </Flexbox>
+                  <Typography.Text type={'secondary'}>
+                    {user.device} · {user.os} · {user.browser}
+                  </Typography.Text>
+                </Flexbox>
+              </Flexbox>
+            ))}
           </Flexbox>
         }
         open
+        placement={'bottomLeft'}
       >
         <Tag
           bordered={false}

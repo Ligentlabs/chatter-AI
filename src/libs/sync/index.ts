@@ -3,6 +3,7 @@ import { Doc } from 'yjs';
 
 import { LocalDBInstance } from '@/database/core';
 import { LobeDBSchemaMap } from '@/database/core/db';
+import { SyncAwarenessState, SyncUserInfo } from '@/types/sync';
 
 export type OnSyncEvent = (tableKey: keyof LobeDBSchemaMap) => void;
 
@@ -11,13 +12,10 @@ export interface StartDataSyncParams {
     name: string;
     password?: string;
   };
+  onAwarenessChange: (state: SyncAwarenessState[]) => void;
   onEvent: OnSyncEvent;
-  onPeersChange: (peer: any) => void;
   onSync: (status: 'syncing' | 'synced') => void;
-  user: {
-    id?: string;
-    name?: string;
-  };
+  user: SyncUserInfo;
 }
 
 let provider: WebrtcProvider;
@@ -34,7 +32,7 @@ class SyncBus {
     onEvent,
     onSync,
     user,
-    onPeersChange,
+    onAwarenessChange,
   }: StartDataSyncParams) => {
     // 针对 dev 场景下，provider 会重置，不做二次初始化
     if (provider) return;
@@ -69,13 +67,13 @@ class SyncBus {
     awareness.setLocalState({ clientID: awareness.clientID, user });
 
     awareness.on('change', () => {
-      const state = Array.from(awareness.getStates().values());
-      console.log('awareness:', state, awareness.clientID);
-      onPeersChange?.(
-        state.map((s) => {
-          return { ...s.user, current: s.clientID === awareness.clientID };
-        }),
-      );
+      const state = Array.from(awareness.getStates().values()).map((s) => ({
+        ...s.user,
+        clientID: s.clientID,
+        current: s.clientID === awareness.clientID,
+      }));
+
+      onAwarenessChange?.(state);
     });
   };
 

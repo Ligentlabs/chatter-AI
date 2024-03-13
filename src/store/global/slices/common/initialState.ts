@@ -1,5 +1,7 @@
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
+import { SyncAwarenessState } from '@/types/sync';
+
 export enum SidebarTabKey {
   Chat = 'chat',
   Market = 'market',
@@ -17,14 +19,6 @@ export enum SettingsTabs {
 export interface Guide {
   // Topic 引导
   topic?: boolean;
-}
-
-export interface SyncAwarenessState {
-  browser: string;
-  device: string;
-  id: string;
-  name: string;
-  os: string;
 }
 
 export interface GlobalCommonState {

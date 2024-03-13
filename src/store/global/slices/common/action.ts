@@ -11,7 +11,6 @@ import { globalService } from '@/services/global';
 import { messageService } from '@/services/message';
 import { UserConfig, userService } from '@/services/user';
 import type { GlobalStore } from '@/store/global';
-import { SyncAwarenessState } from '@/store/global/slices/common/initialState';
 import type { GlobalServerConfig, GlobalSettings } from '@/types/settings';
 import { merge } from '@/utils/merge';
 import { browserInfo } from '@/utils/platform';
@@ -94,17 +93,17 @@ export const createCommonSlice: StateCreator<
             name: 'abc',
             // password: '',
           },
-          onEvent,
-          onPeersChange(state: SyncAwarenessState[]) {
+          onAwarenessChange(state) {
             console.log('syncAwareness Changes:', state);
             set({ syncAwareness: state });
           },
+          onEvent,
           onSync: (status) => {
             set({ syncStatus: status });
           },
           user: {
-            id: get().userId,
-            name: get().userId,
+            id: userId,
+            // name: userId,
             ...browserInfo,
           },
         });
