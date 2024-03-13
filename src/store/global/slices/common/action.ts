@@ -99,8 +99,8 @@ export const createCommonSlice: StateCreator<
           onAwarenessChange(state) {
             set({ syncAwareness: state });
           },
-          onEvent,
-          onSync: (status) => {
+          onSyncEvent: onEvent,
+          onSyncStatusChange: (status) => {
             set({ syncStatus: status });
           },
           signaling: sync.signaling,

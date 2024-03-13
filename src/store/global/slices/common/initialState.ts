@@ -1,6 +1,6 @@
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
-import { SyncAwarenessState } from '@/types/sync';
+import { PeerSyncStatus, SyncAwarenessState } from '@/types/sync';
 
 export enum SidebarTabKey {
   Chat = 'chat',
@@ -30,7 +30,7 @@ export interface GlobalCommonState {
   sidebarKey: SidebarTabKey;
   syncAwareness: SyncAwarenessState[];
   syncEnabled: boolean;
-  syncStatus?: 'syncing' | 'synced' | 'hold';
+  syncStatus: PeerSyncStatus;
 }
 
 export const initialCommonState: GlobalCommonState = {
@@ -38,4 +38,5 @@ export const initialCommonState: GlobalCommonState = {
   sidebarKey: SidebarTabKey.Chat,
   syncAwareness: [],
   syncEnabled: false,
+  syncStatus: 'ready',
 };

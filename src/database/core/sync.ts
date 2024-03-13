@@ -1,18 +1,14 @@
 import { WebrtcProvider } from 'y-webrtc';
 import { Doc } from 'yjs';
 
-
-
-import { OnSyncEvent, StartDataSyncParams } from '@/types/sync';
-
-
+import { OnSyncEvent, OnSyncStatusChange, StartDataSyncParams } from '@/types/sync';
 
 import { LobeDBSchemaMap, LocalDBInstance } from './db';
-
 
 let provider: WebrtcProvider;
 
 let ydoc: Doc;
+
 if (typeof window !== 'undefined') {
   ydoc = new Doc();
 }
@@ -20,18 +16,23 @@ if (typeof window !== 'undefined') {
 class SyncBus {
   private ydoc: Doc = ydoc;
 
-  startDataSync = async ({
-    channel,
-    onEvent,
-    onSync,
-    user,
-    onAwarenessChange,
-    signaling = 'wss://y-webrtc-signaling.lobehub.com',
-  }: StartDataSyncParams) => {
-    // 如果之前实例化过，则断开
+  startDataSync = async (params: StartDataSyncParams) => {
     if (provider) {
       provider.destroy();
     }
+
+    this.connect(params);
+  };
+
+  connect = (params: StartDataSyncParams) => {
+    const {
+      channel,
+      onSyncEvent,
+      onSyncStatusChange,
+      user,
+      onAwarenessChange,
+      signaling = 'wss://y-webrtc-signaling.lobehub.com',
+    } = params;
 
     // clients connected to the same room-name share document updates
     provider = new WebrtcProvider(channel.name, this.ydoc, {
@@ -39,24 +40,39 @@ class SyncBus {
       signaling: [signaling],
     });
 
-    provider.on('synced', async ({ synced }) => {
-      console.log('WebrtcProvider', synced, this.getYMap('messages').size);
-      if (synced) {
-        onSync?.('syncing');
-        await this.initSync();
-        console.log('yjs init success', this.getYMap('messages').size);
-        onSync?.('synced');
+    // 当本地设备正确连接到 WebRTC Provider 后，触发 status 事件
+    // 当开始连接，则开始监听事件
+    provider.on('status', async ({ connected }) => {
+      // console.log('connected:', connected);
+      if (connected) {
+        // console.log('start Observe...');
+        this.initObserve(onSyncEvent, onSyncStatusChange);
+        onSyncStatusChange?.('ready');
       }
     });
 
-    provider.on('status', async ({ connected }) => {
-      console.log('status', connected);
-      // 当开始连接，则初始化数据
-      if (connected) {
-        console.log('start Observe...');
-        this.initObserve(onEvent);
+    // 当各方的数据均完成同步后，YJS 对象之间的数据已经一致时，触发 synced 事件
+    provider.on('synced', async ({ synced }) => {
+      console.log('provider', synced, this.getYMap('messages').size);
+      if (synced) {
+        onSyncStatusChange?.('syncing');
+        await this.initSync();
+        onSyncStatusChange?.('synced');
+        console.log('yjs init success', this.getYMap('messages').size);
+      } else {
+        console.log('sync failed,try to reconnect...');
+        this.reconnect(params);
       }
     });
+
+    // provider.on('peers', (peers) => {
+    //   console.log('currentState:', peers);
+    //   if (peers.webrtcPeers.length > 0) {
+    //     onSync?.('syncing');
+    //   } else {
+    //     onSync?.('ready');
+    //   }
+    // });
 
     const awareness = provider.awareness;
 
@@ -71,6 +87,17 @@ class SyncBus {
 
       onAwarenessChange?.(state);
     });
+
+    return provider;
+  };
+
+  reconnect = (params: StartDataSyncParams) => {
+    if (provider) {
+      provider.awareness.destroy();
+      provider.destroy();
+    }
+
+    this.connect(params);
   };
 
   getYMap = (tableKey: keyof LobeDBSchemaMap) => {
@@ -79,20 +106,24 @@ class SyncBus {
 
   private initSync = async () => {
     await Promise.all(
-      ['sessions', 'sessionGroups', 'topics', 'messages', 'plugins'].map(async (tableKey) => {
-        return this.loadDataFromDBtoYjs(tableKey as keyof LobeDBSchemaMap);
-      }),
+      ['sessions', 'sessionGroups', 'topics', 'messages', 'plugins'].map(async (tableKey) =>
+        this.loadDataFromDBtoYjs(tableKey as keyof LobeDBSchemaMap),
+      ),
     );
   };
 
-  private initObserve = (onEvent: OnSyncEvent) => {
+  private initObserve = (onEvent: OnSyncEvent, onSyncStatusChange: OnSyncStatusChange) => {
     ['sessions', 'sessionGroups', 'topics', 'messages', 'plugins'].forEach((tableKey) => {
       // listen yjs change
-      this.observeYMapChange(tableKey as keyof LobeDBSchemaMap, onEvent);
+      this.observeYMapChange(tableKey as keyof LobeDBSchemaMap, onEvent, onSyncStatusChange);
     });
   };
 
-  private observeYMapChange = (tableKey: keyof LobeDBSchemaMap, onEvent: OnSyncEvent) => {
+  private observeYMapChange = (
+    tableKey: keyof LobeDBSchemaMap,
+    onEvent: OnSyncEvent,
+    onSyncStatusChange: OnSyncStatusChange,
+  ) => {
     const table = LocalDBInstance[tableKey];
     const yItemMap = this.getYMap(tableKey);
 
@@ -123,7 +154,9 @@ class SyncBus {
         }
       });
 
+      onSyncStatusChange?.('syncing');
       await Promise.all(pools);
+      onSyncStatusChange?.('synced');
       onEvent?.(tableKey);
     });
   };

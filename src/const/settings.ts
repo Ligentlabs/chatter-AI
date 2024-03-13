@@ -114,7 +114,9 @@ export const DEFAULT_TOOL_CONFIG = {
   },
 };
 
-const DEFAULT_SYNC_CONFIG: GlobalSyncSettings = {};
+const DEFAULT_SYNC_CONFIG: GlobalSyncSettings = {
+  channelName: 'atc',
+};
 
 export const DEFAULT_SETTINGS: GlobalSettings = {
   defaultAgent: DEFAULT_AGENT,

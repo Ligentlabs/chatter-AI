@@ -1,10 +1,10 @@
 import { Avatar, Icon, Tag } from '@lobehub/ui';
-import { Tag as ATag, Badge, Button, Input, Popover, Typography } from 'antd';
-import { createStyles, useTheme } from 'antd-style';
+import { Tag as ATag, Badge, Button, Popover, Typography } from 'antd';
+import { useTheme } from 'antd-style';
 import isEqual from 'fast-deep-equal';
 import {
-  LucideCloud,
   LucideCloudCog,
+  LucideCloudy,
   LucideLaptop,
   LucideRefreshCw,
   LucideSmartphone,
@@ -14,20 +14,17 @@ import { memo } from 'react';
 import { Flexbox } from 'react-layout-kit';
 
 import { useGlobalStore } from '@/store/global';
-import { settingsSelectors } from '@/store/global/slices/settings/selectors';
+import { settingsSelectors } from '@/store/global/selectors';
 
-export const useStyles = createStyles(({ css, token }) => ({
-  logo: css`
-    fill: ${token.colorText};
-  `,
-  top: css`
-    position: sticky;
-    top: 0;
-  `,
-}));
+const text = {
+  ready: 'ready',
+  synced: '已同步',
+  syncing: '同步中',
+} as const;
 
 const SyncStatusTag = memo(() => {
-  const [isSyncing, enableSync, channelName, setSettings] = useGlobalStore((s) => [
+  const [syncStatus, isSyncing, enableSync, channelName] = useGlobalStore((s) => [
+    s.syncStatus,
     s.syncStatus === 'syncing',
     s.syncEnabled,
     settingsSelectors.syncConfig(s).channelName,
@@ -36,23 +33,24 @@ const SyncStatusTag = memo(() => {
   const users = useGlobalStore((s) => s.syncAwareness, isEqual);
 
   const theme = useTheme();
+
   return enableSync ? (
     <Popover
       arrow={false}
       content={
         <Flexbox gap={8}>
           <Flexbox align={'center'} horizontal style={{ fontSize: 12 }}>
-            <span>频道：</span>
-            <div>
-              <Input
-                onChange={(e) => {
-                  setSettings({ sync: { channelName: e.target.value } });
-                }}
-                size={'small'}
-                value={channelName}
-                variant={'borderless'}
-              />
-            </div>
+            <span>频道：{channelName} </span>
+            {/*<div>*/}
+            {/*  <Input*/}
+            {/*    onChange={(e) => {*/}
+            {/*      setSettings({ sync: { channelName: e.target.value } });*/}
+            {/*    }}*/}
+            {/*    size={'small'}*/}
+            {/*    value={channelName}*/}
+            {/*    variant={'borderless'}*/}
+            {/*  />*/}
+            {/*</div>*/}
           </Flexbox>
           <Flexbox gap={12}>
             {users.map((user) => (
@@ -93,9 +91,9 @@ const SyncStatusTag = memo(() => {
       <Tag
         bordered={false}
         color={isSyncing ? 'blue' : 'green'}
-        icon={<Icon icon={isSyncing ? LucideRefreshCw : LucideCloud} spin={isSyncing} />}
+        icon={<Icon icon={isSyncing ? LucideRefreshCw : LucideCloudy} spin={isSyncing} />}
       >
-        {isSyncing ? '同步中' : '已同步'}
+        {text[syncStatus]}
       </Tag>
     </Popover>
   ) : (
