@@ -2,10 +2,10 @@ import Dexie, { BulkError } from 'dexie';
 import { ZodObject } from 'zod';
 
 import { DBBaseFieldsSchema } from '@/database/core/types/db';
-import { syncBus } from '@/libs/sync';
 import { nanoid } from '@/utils/uuid';
 
 import { LocalDB, LocalDBInstance, LocalDBSchema } from './db';
+import { syncBus } from './sync';
 
 export class BaseModel<N extends keyof LocalDBSchema = any, T = LocalDBSchema[N]['table']> {
   protected readonly db: LocalDB;

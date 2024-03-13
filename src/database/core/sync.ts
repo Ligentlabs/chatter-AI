@@ -1,31 +1,19 @@
 import { WebrtcProvider } from 'y-webrtc';
 import { Doc } from 'yjs';
 
-import { LocalDBInstance } from '@/database/core';
-import { LobeDBSchemaMap } from '@/database/core/db';
-import { SyncAwarenessState, SyncUserInfo } from '@/types/sync';
+import { OnSyncEvent, StartDataSyncParams } from '@/types/sync';
 
-export type OnSyncEvent = (tableKey: keyof LobeDBSchemaMap) => void;
-
-export interface StartDataSyncParams {
-  channel: {
-    name: string;
-    password?: string;
-  };
-  onAwarenessChange: (state: SyncAwarenessState[]) => void;
-  onEvent: OnSyncEvent;
-  onSync: (status: 'syncing' | 'synced') => void;
-  user: SyncUserInfo;
-}
+import { LobeDBSchemaMap, LocalDBInstance } from './db';
 
 let provider: WebrtcProvider;
 
-class SyncBus {
-  private ydoc: Doc;
+let ydoc: Doc;
+if (typeof window !== 'undefined') {
+  ydoc = new Doc();
+}
 
-  constructor() {
-    this.ydoc = new Doc();
-  }
+class SyncBus {
+  private ydoc: Doc = ydoc;
 
   startDataSync = async ({
     channel,
@@ -33,31 +21,37 @@ class SyncBus {
     onSync,
     user,
     onAwarenessChange,
+    signaling = 'wss://y-webrtc-signaling.lobehub.com',
   }: StartDataSyncParams) => {
-    // 针对 dev 场景下，provider 会重置，不做二次初始化
-    if (provider) return;
+    // 如果之前实例化过，则断开
+    if (provider) {
+      provider.destroy();
+    }
 
     // clients connected to the same room-name share document updates
     provider = new WebrtcProvider(channel.name, this.ydoc, {
       password: channel.password,
-      signaling: ['wss://y-webrtc-signaling.lobehub.com'],
+      signaling: [signaling],
     });
 
     provider.on('synced', async ({ synced }) => {
-      if (synced) {
-        console.log('WebrtcProvider: synced');
-        // this.initObserve(onEvent);
-      }
+      console.log('WebrtcProvider', synced, this.getYMap('messages').size);
+    });
+
+    provider.on('peers', (arg0) => {
+      console.log('peers', arg0.webrtcPeers);
     });
 
     provider.on('status', async ({ connected }) => {
+      console.log('status', connected);
       // 当开始连接，则初始化数据
       if (connected) {
         onSync?.('syncing');
         console.log('start init data...');
         this.initObserve(onEvent);
         await this.initSync();
-        console.log('yjs init success');
+
+        console.log('yjs init success', this.getYMap('messages').size);
         onSync?.('synced');
       }
     });
@@ -104,7 +98,7 @@ class SyncBus {
       // abort local change
       if (event.transaction.local) return;
 
-      // console.log(`observe ${tableKey} changes:`, event.keysChanged.size);
+      console.log(`observe ${tableKey} changes:`, event.keysChanged.size);
       const pools = Array.from(event.keys).map(async ([id, payload]) => {
         const item: any = yItemMap.get(id);
 

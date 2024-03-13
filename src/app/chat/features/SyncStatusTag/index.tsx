@@ -1,12 +1,20 @@
-import { Avatar, Icon } from '@lobehub/ui';
-import { Popover, Tag, Typography } from 'antd';
+import { Avatar, Icon, Tag } from '@lobehub/ui';
+import { Tag as ATag, Badge, Button, Input, Popover, Typography } from 'antd';
 import { createStyles, useTheme } from 'antd-style';
 import isEqual from 'fast-deep-equal';
-import { LucideCheck, LucideLaptop, LucideRefreshCw, LucideSmartphone } from 'lucide-react';
+import {
+  LucideCloud,
+  LucideCloudCog,
+  LucideLaptop,
+  LucideRefreshCw,
+  LucideSmartphone,
+} from 'lucide-react';
+import Link from 'next/link';
 import { memo } from 'react';
 import { Flexbox } from 'react-layout-kit';
 
 import { useGlobalStore } from '@/store/global';
+import { settingsSelectors } from '@/store/global/slices/settings/selectors';
 
 export const useStyles = createStyles(({ css, token }) => ({
   logo: css`
@@ -19,18 +27,33 @@ export const useStyles = createStyles(({ css, token }) => ({
 }));
 
 const SyncStatusTag = memo(() => {
-  const [isSyncing, syncEnabled] = useGlobalStore((s) => [
+  const [isSyncing, enableSync, channelName, setSettings] = useGlobalStore((s) => [
     s.syncStatus === 'syncing',
     s.syncEnabled,
+    settingsSelectors.syncConfig(s).channelName,
+    s.setSettings,
   ]);
   const users = useGlobalStore((s) => s.syncAwareness, isEqual);
 
   const theme = useTheme();
-  return (
-    syncEnabled && (
-      <Popover
-        arrow={false}
-        content={
+  return enableSync ? (
+    <Popover
+      arrow={false}
+      content={
+        <Flexbox gap={8}>
+          <Flexbox align={'center'} horizontal style={{ fontSize: 12 }}>
+            <span>频道：</span>
+            <div>
+              <Input
+                onChange={(e) => {
+                  setSettings({ sync: { channelName: e.target.value } });
+                }}
+                size={'small'}
+                value={channelName}
+                variant={'borderless'}
+              />
+            </div>
+          </Flexbox>
           <Flexbox gap={12}>
             {users.map((user) => (
               <Flexbox gap={12} horizontal key={user.clientID}>
@@ -50,9 +73,9 @@ const SyncStatusTag = memo(() => {
                   <Flexbox gap={8} horizontal>
                     {user.name || user.id}
                     {user.current && (
-                      <Tag bordered={false} color={'blue'}>
+                      <ATag bordered={false} color={'blue'}>
                         current
-                      </Tag>
+                      </ATag>
                     )}
                   </Flexbox>
                   <Typography.Text type={'secondary'}>
@@ -62,19 +85,40 @@ const SyncStatusTag = memo(() => {
               </Flexbox>
             ))}
           </Flexbox>
-        }
-        open
-        placement={'bottomLeft'}
+        </Flexbox>
+      }
+      open
+      placement={'bottomLeft'}
+    >
+      <Tag
+        bordered={false}
+        color={isSyncing ? 'blue' : 'green'}
+        icon={<Icon icon={isSyncing ? LucideRefreshCw : LucideCloud} spin={isSyncing} />}
       >
-        <Tag
-          bordered={false}
-          color={isSyncing ? 'blue' : 'green'}
-          icon={<Icon icon={isSyncing ? LucideRefreshCw : LucideCheck} spin={isSyncing} />}
-        >
-          同步
+        {isSyncing ? '同步中' : '已同步'}
+      </Tag>
+    </Popover>
+  ) : (
+    <Popover
+      arrow={false}
+      content={
+        <Flexbox gap={12} width={320}>
+          会话数据仅存储于当前使用的浏览器。如果使用不同浏览器打开时，数据不会互相同步。如你需要在多个设备间同步数据，请配置并开启云端同步。
+          <Link href={'/settings/sync'}>
+            <Button block icon={<Icon icon={LucideCloudCog} />} type={'primary'}>
+              配置云端同步
+            </Button>
+          </Link>
+        </Flexbox>
+      }
+      placement={'bottomLeft'}
+    >
+      <div>
+        <Tag>
+          <Badge status="default" /> 本地
         </Tag>
-      </Popover>
-    )
+      </div>
+    </Popover>
   );
 });
 

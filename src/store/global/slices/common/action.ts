@@ -6,12 +6,12 @@ import type { StateCreator } from 'zustand/vanilla';
 import { INBOX_SESSION_ID } from '@/const/session';
 import { SESSION_CHAT_URL } from '@/const/url';
 import { CURRENT_VERSION } from '@/const/version';
-import { OnSyncEvent } from '@/libs/sync';
 import { globalService } from '@/services/global';
 import { messageService } from '@/services/message';
 import { UserConfig, userService } from '@/services/user';
 import type { GlobalStore } from '@/store/global';
 import type { GlobalServerConfig, GlobalSettings } from '@/types/settings';
+import { OnSyncEvent } from '@/types/sync';
 import { merge } from '@/utils/merge';
 import { browserInfo } from '@/utils/platform';
 import { setNamespace } from '@/utils/storeDebug';
@@ -88,22 +88,25 @@ export const createCommonSlice: StateCreator<
       async () => {
         if (!userId) return false;
 
+        const sync = settingsSelectors.syncConfig(get());
+        if (!sync.channelName) return false;
+
         return globalService.enabledSync({
           channel: {
-            name: 'abc',
-            // password: '',
+            name: sync.channelName,
+            password: sync.channelPassword,
           },
           onAwarenessChange(state) {
-            console.log('syncAwareness Changes:', state);
             set({ syncAwareness: state });
           },
           onEvent,
           onSync: (status) => {
             set({ syncStatus: status });
           },
+          signaling: sync.signaling,
           user: {
-            id: userId,
             // name: userId,
+            id: userId,
             ...browserInfo,
           },
         });

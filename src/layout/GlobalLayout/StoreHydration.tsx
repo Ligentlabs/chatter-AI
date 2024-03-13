@@ -50,6 +50,7 @@ const StoreHydration = memo(() => {
     router.prefetch('/market');
     router.prefetch('/settings/common');
     router.prefetch('/settings/agent');
+    router.prefetch('/settings/sync');
   }, [router]);
 
   return null;

@@ -1,5 +1,6 @@
-import { StartDataSyncParams, syncBus } from '@/libs/sync';
+import { syncBus } from '@/database/core';
 import { GlobalServerConfig } from '@/types/settings';
+import { StartDataSyncParams } from '@/types/sync';
 
 import { API_ENDPOINTS } from './_url';
 
