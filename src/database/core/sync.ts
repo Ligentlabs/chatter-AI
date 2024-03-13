@@ -1,5 +1,7 @@
+import pMap from 'p-map';
 import { WebrtcProvider } from 'y-webrtc';
 import { Doc } from 'yjs';
+import { YArray } from 'yjs/dist/src/types/YArray';
 
 import { OnSyncEvent, OnSyncStatusChange, StartDataSyncParams } from '@/types/sync';
 
@@ -24,7 +26,7 @@ class SyncBus {
     this.connect(params);
   };
 
-  connect = (params: StartDataSyncParams) => {
+  connect = async (params: StartDataSyncParams) => {
     const {
       channel,
       onSyncEvent,
@@ -53,15 +55,17 @@ class SyncBus {
 
     // 当各方的数据均完成同步后，YJS 对象之间的数据已经一致时，触发 synced 事件
     provider.on('synced', async ({ synced }) => {
-      console.log('provider', synced, this.getYMap('messages').size);
+      console.log('provider', synced);
+
       if (synced) {
         onSyncStatusChange?.('syncing');
         await this.initSync();
         onSyncStatusChange?.('synced');
-        console.log('yjs init success', this.getYMap('messages').size);
+        console.log('yjs init success');
       } else {
         console.log('sync failed,try to reconnect...');
-        this.reconnect(params);
+        provider.disconnect();
+        await this.reconnect(params);
       }
     });
 
@@ -92,17 +96,17 @@ class SyncBus {
     return provider;
   };
 
-  reconnect = (params: StartDataSyncParams) => {
+  reconnect = async (params: StartDataSyncParams) => {
     if (provider) {
-      provider.awareness.destroy();
       provider.destroy();
     }
 
-    this.connect(params);
+    console.log('try to reconnect...');
+    await this.connect(params);
   };
 
   getYMap = (tableKey: keyof LobeDBSchemaMap) => {
-    return this.ydoc.getMap(tableKey);
+    return this.ydoc.getArray(tableKey);
   };
 
   private initSync = async () => {
@@ -114,7 +118,7 @@ class SyncBus {
   };
 
   private initObserve = (onEvent: OnSyncEvent, onSyncStatusChange: OnSyncStatusChange) => {
-    ['sessions', 'sessionGroups', 'topics', 'messages', 'plugins'].forEach((tableKey) => {
+    ['sessions', 'sessionGroups', 'topics', 'plugins', 'messages'].forEach((tableKey) => {
       // listen yjs change
       this.observeYMapChange(tableKey as keyof LobeDBSchemaMap, onEvent, onSyncStatusChange);
     });
@@ -132,31 +136,18 @@ class SyncBus {
       // abort local change
       if (event.transaction.local) return;
 
-      console.log(`observe ${tableKey} changes:`, event.keysChanged.size);
-      const pools = Array.from(event.keys).map(async ([id, payload]) => {
-        const item: any = yItemMap.get(id);
+      console.log(`observe ${tableKey} changes:`, event.target.length, event);
+      const addPools = Array.from(event.changes.added).map(async (item) => {
+        const array = item.parent as YArray<any>;
 
-        switch (payload.action) {
-          case 'add':
-          case 'update': {
-            const itemInTable = await table.get(id);
-            if (!itemInTable) {
-              await table.add(item, id);
-            } else {
-              await table.update(id, item);
-            }
-            break;
-          }
-
-          case 'delete': {
-            await table.delete(id);
-            break;
-          }
-        }
+        // @ts-ignore
+        await table.bulkPut(array.toArray());
       });
 
       onSyncStatusChange?.('syncing');
-      await Promise.all(pools);
+
+      await Promise.all(addPools);
+
       onSyncStatusChange?.('synced');
       onEvent?.(tableKey);
     });
@@ -165,12 +156,32 @@ class SyncBus {
   private loadDataFromDBtoYjs = async (tableKey: keyof LobeDBSchemaMap) => {
     const table = LocalDBInstance[tableKey];
     const items = await table.toArray();
-    const yItemMap = this.getYMap(tableKey);
+    const yData = this.getYMap(tableKey);
 
-    items.forEach((item) => {
-      // TODO: 需要改表，所有 table 都需要有 id 字段
-      yItemMap.set(item.id || (item as any).identifier, item);
-    });
+    // 定义每批次最多包含的数据条数
+    const batchSize = 50;
+
+    // 计算总批次数
+    const totalBatches = Math.ceil(items.length / batchSize);
+
+    for (let i = 0; i < totalBatches; i++) {
+      // 计算当前批次的起始和结束索引
+      const start = i * batchSize;
+      const end = start + batchSize;
+
+      // 获取当前批次的数据
+      const batchItems = items.slice(start, end);
+
+      // 将当前批次的数据推送到 Yjs 中
+      yData.push(batchItems);
+    }
+
+    console.log('[DB]:', tableKey, yData.toArray());
+
+    // items.forEach((item) => {
+    //   // TODO: 需要改表，所有 table 都需要有 id 字段
+    //   yData.set(item.id || (item as any).identifier, item);
+    // });
   };
 }
 

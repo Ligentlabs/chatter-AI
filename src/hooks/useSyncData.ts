@@ -9,7 +9,7 @@ export const useEnabledDataSync = () => {
   const [refreshSessions] = useSessionStore((s) => [s.refreshSessions]);
 
   useEnabledSync(userId, (tableKey) => {
-    console.log('triggerSync Event');
+    console.log('triggerSync Event:', tableKey);
 
     switch (tableKey) {
       case 'messages': {

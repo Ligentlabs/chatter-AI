@@ -1,3 +1,4 @@
+import { throttle } from 'lodash-es';
 import { gt } from 'semver';
 import useSWR, { SWRResponse, mutate } from 'swr';
 import { DeepPartial } from 'utility-types';
@@ -99,7 +100,7 @@ export const createCommonSlice: StateCreator<
           onAwarenessChange(state) {
             set({ syncAwareness: state });
           },
-          onSyncEvent: onEvent,
+          onSyncEvent: throttle(onEvent, 1000),
           onSyncStatusChange: (status) => {
             set({ syncStatus: status });
           },
