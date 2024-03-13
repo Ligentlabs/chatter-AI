@@ -77,6 +77,7 @@ class SyncBus {
     const awareness = provider.awareness;
 
     awareness.setLocalState({ clientID: awareness.clientID, user });
+    onAwarenessChange?.([{ ...user, clientID: awareness.clientID, current: true }]);
 
     awareness.on('change', () => {
       const state = Array.from(awareness.getStates().values()).map((s) => ({
