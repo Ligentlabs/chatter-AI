@@ -1,9 +1,14 @@
 import { WebrtcProvider } from 'y-webrtc';
 import { Doc } from 'yjs';
 
+
+
 import { OnSyncEvent, StartDataSyncParams } from '@/types/sync';
 
+
+
 import { LobeDBSchemaMap, LocalDBInstance } from './db';
+
 
 let provider: WebrtcProvider;
 
@@ -36,23 +41,20 @@ class SyncBus {
 
     provider.on('synced', async ({ synced }) => {
       console.log('WebrtcProvider', synced, this.getYMap('messages').size);
-    });
-
-    provider.on('peers', (arg0) => {
-      console.log('peers', arg0.webrtcPeers);
+      if (synced) {
+        onSync?.('syncing');
+        await this.initSync();
+        console.log('yjs init success', this.getYMap('messages').size);
+        onSync?.('synced');
+      }
     });
 
     provider.on('status', async ({ connected }) => {
       console.log('status', connected);
       // 当开始连接，则初始化数据
       if (connected) {
-        onSync?.('syncing');
-        console.log('start init data...');
+        console.log('start Observe...');
         this.initObserve(onEvent);
-        await this.initSync();
-
-        console.log('yjs init success', this.getYMap('messages').size);
-        onSync?.('synced');
       }
     });
 
