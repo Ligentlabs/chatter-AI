@@ -46,6 +46,9 @@ export const AgentRuntimeErrorType = {
 
   InvalidTogetherAIAPIKey: 'InvalidTogetherAIAPIKey',
   TogetherAIBizError: 'TogetherAIBizError',
+
+  InvalidHuggingFaceAPIKey: 'InvalidHuggingFaceAPIKey',
+  HuggingFaceBizError: 'HuggingFaceBizError',
 } as const;
 
 export type ILobeAgentRuntimeErrorType =

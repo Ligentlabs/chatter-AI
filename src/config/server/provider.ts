@@ -6,7 +6,7 @@ declare global {
     interface ProcessEnv {
       API_KEY_SELECT_MODE?: string;
 
-      // OpenAI Provider
+      // OpenAI
       ENABLED_OPENAI?: string;
       OPENAI_API_KEY?: string;
       OPENAI_PROXY_URL?: string;
@@ -14,66 +14,68 @@ declare global {
       OPENAI_ENABLED_MODELS?: string;
       OPENAI_FUNCTION_REGIONS?: string;
 
-      // Azure OpenAI Provider
+      // Azure OpenAI
       AZURE_API_KEY?: string;
       AZURE_ENDPOINT?: string;
       AZURE_API_VERSION?: string;
 
-      // ZhiPu Provider
+      // ZhiPu
       ENABLED_ZHIPU?: string;
       ZHIPU_API_KEY?: string;
       ZHIPU_PROXY_URL?: string;
 
-      // Google Provider
+      // Google
       ENABLED_GOOGLE?: string;
       GOOGLE_API_KEY?: string;
       GOOGLE_PROXY_URL?: string;
 
-      // Moonshot Provider
+      // Moonshot
       ENABLED_MOONSHOT?: string;
       MOONSHOT_API_KEY?: string;
       MOONSHOT_PROXY_URL?: string;
 
-      // Perplexity Provider
+      // Perplexity
       ENABLED_PERPLEXITY?: string;
       PERPLEXITY_API_KEY?: string;
 
-      // Anthropic Provider
+      // Anthropic
       ENABLED_ANTHROPIC?: string;
       ANTHROPIC_API_KEY?: string;
       ANTHROPIC_PROXY_URL?: string;
 
-      // Mistral Provider
+      // Mistral
       ENABLED_MISTRAL?: string;
       MISTRAL_API_KEY?: string;
 
-      // Groq Provider
+      // Groq
       ENABLED_GROQ?: string;
       GROQ_API_KEY?: string;
 
-      // OpenRouter Provider
+      // OpenRouter
       ENABLED_OPENROUTER?: string;
       OPENROUTER_API_KEY?: string;
       OPENROUTER_MODEL_LIST?: string;
 
-      // ZeroOne Provider
+      // ZeroOne
       ENABLED_ZEROONE?: string;
       ZEROONE_API_KEY?: string;
 
-      // TogetherAI Provider
+      // TogetherAI
       ENABLED_TOGETHERAI?: string;
       TOGETHERAI_API_KEY?: string;
       TOGETHERAI_MODEL_LIST?: string;
 
-      // AWS Credentials
+      // AWS
       AWS_REGION?: string;
       AWS_ACCESS_KEY_ID?: string;
       AWS_SECRET_ACCESS_KEY?: string;
 
-      // Ollama Provider;
+      // Ollama
       OLLAMA_PROXY_URL?: string;
-
       OLLAMA_MODEL_LIST?: string;
+
+      // Hugging Face
+      HUGGINGFACE_API_KEY?: string;
 
       /**
        * @deprecated
@@ -98,10 +100,10 @@ export const getProviderConfig = () => {
 
   const AZURE_API_KEY = process.env.AZURE_API_KEY || '';
 
-  const ZHIPU_API_KEY = process.env.ZHIPU_API_KEY || '';
   const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
 
   const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+  const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || '';
 
   const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY || '';
 
@@ -118,6 +120,8 @@ export const getProviderConfig = () => {
   const ZEROONE_API_KEY = process.env.ZEROONE_API_KEY || '';
 
   const TOGETHERAI_API_KEY = process.env.TOGETHERAI_API_KEY || '';
+
+  const ZHIPU_API_KEY = process.env.ZHIPU_API_KEY || '';
 
   const OLLAMA_PROXY_URL = process.env.OLLAMA_PROXY_URL || '';
 
@@ -203,5 +207,8 @@ export const getProviderConfig = () => {
     ENABLE_OLLAMA: !!OLLAMA_PROXY_URL,
     OLLAMA_PROXY_URL: OLLAMA_PROXY_URL,
     OLLAMA_MODEL_LIST: process.env.OLLAMA_MODEL_LIST || process.env.OLLAMA_CUSTOM_MODELS,
+
+    ENABLE_HUGGINGFACE: !!HUGGINGFACE_API_KEY,
+    HUGGINGFACE_API_KEY,
   };
 };
