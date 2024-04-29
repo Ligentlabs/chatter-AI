@@ -3,10 +3,12 @@ import { t } from 'i18next';
 
 import { DEFAULT_INBOX_AVATAR, DEFAULT_USER_AVATAR } from '@/const/meta';
 import { INBOX_SESSION_ID } from '@/const/session';
-import { useGlobalStore } from '@/store/global';
-import { commonSelectors } from '@/store/global/selectors';
+import { useAgentStore } from '@/store/agent';
+import { agentSelectors } from '@/store/agent/selectors';
 import { useSessionStore } from '@/store/session';
-import { agentSelectors } from '@/store/session/selectors';
+import { sessionMetaSelectors } from '@/store/session/selectors';
+import { useUserStore } from '@/store/user';
+import { commonSelectors } from '@/store/user/selectors';
 import { ChatMessage } from '@/types/message';
 import { MetaData } from '@/types/meta';
 import { merge } from '@/utils/merge';
@@ -18,7 +20,7 @@ const getMeta = (message: ChatMessage) => {
   switch (message.role) {
     case 'user': {
       return {
-        avatar: commonSelectors.userAvatar(useGlobalStore.getState()) || DEFAULT_USER_AVATAR,
+        avatar: commonSelectors.userAvatar(useUserStore.getState()) || DEFAULT_USER_AVATAR,
       };
     }
 
@@ -27,7 +29,7 @@ const getMeta = (message: ChatMessage) => {
     }
 
     case 'assistant': {
-      return agentSelectors.currentAgentMeta(useSessionStore.getState());
+      return sessionMetaSelectors.currentAgentMeta(useSessionStore.getState());
     }
 
     case 'function': {
@@ -88,14 +90,14 @@ const currentChatsWithGuideMessage =
   };
 
 const currentChatIDsWithGuideMessage = (s: ChatStore) => {
-  const meta = agentSelectors.currentAgentMeta(useSessionStore.getState());
+  const meta = sessionMetaSelectors.currentAgentMeta(useSessionStore.getState());
 
   return currentChatsWithGuideMessage(meta)(s).map((s) => s.id);
 };
 
 const currentChatsWithHistoryConfig = (s: ChatStore): ChatMessage[] => {
   const chats = currentChats(s);
-  const config = agentSelectors.currentAgentConfig(useSessionStore.getState());
+  const config = agentSelectors.currentAgentConfig(useAgentStore.getState());
 
   return chatHelpers.getSlicedMessagesWithConfig(chats, config);
 };
