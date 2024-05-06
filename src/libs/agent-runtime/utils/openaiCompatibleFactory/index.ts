@@ -1,4 +1,4 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { createCallbacksTransformer } from 'ai';
 import OpenAI, { ClientOptions } from 'openai';
 
 import { LOBE_DEFAULT_MODEL_LIST } from '@/config/modelProviders';
@@ -85,9 +85,29 @@ export const LobeOpenAICompatibleFactory = ({
           debugStream(useForDebug.toReadableStream()).catch(console.error);
         }
 
-        return new StreamingTextResponse(OpenAIStream(prod, options?.callback), {
-          headers: options?.headers,
-        });
+        return new Response(
+          prod
+            .toReadableStream()
+            .pipeThrough(
+              new TransformStream({
+                transform: (chunk, controller) => {
+                  const { type, id, data } = this.parserResponse(chunk);
+
+                  controller.enqueue(`id: ${id}\n`);
+                  controller.enqueue(`event: ${type}\n`);
+                  controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+                },
+              }),
+            )
+            .pipeThrough(createCallbacksTransformer(options?.callback)),
+          {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Content-Type': 'text/event-stream',
+              ...options?.headers,
+            },
+          },
+        );
       } catch (error) {
         let desensitizedEndpoint = this.baseURL;
 
@@ -148,5 +168,38 @@ export const LobeOpenAICompatibleFactory = ({
         })
 
         .filter(Boolean) as ChatModelCard[];
+    }
+
+    private parserResponse(chunk: Uint8Array) {
+      const decoder = new TextDecoder();
+
+      const chunkValue = decoder.decode(chunk, { stream: true });
+      const jsonValue: OpenAI.ChatCompletionChunk = JSON.parse(chunkValue);
+
+      // maybe need another structure to add support for multiple choices
+      const item = jsonValue.choices[0];
+
+      if (typeof item.delta.content === 'string') {
+        return { data: item.delta.content, id: jsonValue.id, type: 'text' };
+      }
+
+      if (item.delta.tool_calls) {
+        return { data: item.delta.tool_calls, id: jsonValue.id, type: 'tool_calls' };
+      }
+
+      if (item.delta.content === null) {
+        return { data: item.delta, id: jsonValue.id, type: 'data' };
+      }
+
+      // 给定结束原因
+      if (item.finish_reason) {
+        return { data: item.finish_reason, id: jsonValue.id, type: 'stop' };
+      }
+
+      // 其余情况下，返回 delta 和 index
+      return {
+        data: { delta: item.delta, id: jsonValue.id, index: item.index },
+        type: 'data',
+      };
     }
   };

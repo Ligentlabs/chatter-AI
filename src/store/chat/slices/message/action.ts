@@ -6,7 +6,7 @@ import { template } from 'lodash-es';
 import { SWRResponse, mutate } from 'swr';
 import { StateCreator } from 'zustand/vanilla';
 
-import { LOADING_FLAT, isFunctionMessageAtStart, testFunctionMessageAtEnd } from '@/const/message';
+import { LOADING_FLAT, testFunctionMessageAtEnd } from '@/const/message';
 import { TraceEventType, TraceNameMap } from '@/const/trace';
 import { useClientDataSWR } from '@/libs/swr';
 import { chatService } from '@/services/chat';
@@ -467,20 +467,25 @@ export const chatMessage: StateCreator<
         // update the content after fetch result
         await internalUpdateMessageContent(assistantId, content);
       },
-      onMessageHandle: async (text) => {
-        output += text;
-        outputQueue.push(...text.split(''));
+      onMessageHandle: async (chunk) => {
+        switch (chunk.type) {
+          case 'text': {
+            output += chunk.text;
+            outputQueue.push(...chunk.text.split(''));
+            break;
+          }
 
-        // is this message is just a function call
-        if (isFunctionMessageAtStart(output)) {
-          stopAnimation();
-          dispatchMessage({
-            id: assistantId,
-            key: 'content',
-            type: 'updateMessage',
-            value: output,
-          });
-          isFunctionCall = true;
+          // is this message is just a function call
+          case 'tool_calls': {
+            stopAnimation();
+            dispatchMessage({
+              id: assistantId,
+              key: 'toolCalls',
+              type: 'updateMessage',
+              value: chunk.tool_calls,
+            });
+            isFunctionCall = true;
+          }
         }
 
         // if it's the first time to receive the message,

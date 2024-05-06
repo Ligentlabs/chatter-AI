@@ -67,7 +67,7 @@ export const messagesReducer = (state: ChatMessage[], payload: MessageDispatch):
           message.extra[key] = value;
         }
 
-        message.updateAt = Date.now();
+        message.updatedAt = Date.now();
       });
     }
 

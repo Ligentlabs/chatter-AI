@@ -5,7 +5,7 @@ import { ErrorType } from '@/types/fetch';
 
 import { LLMRoleType } from '../llm';
 import { BaseDataModel } from '../meta';
-import { ChatPluginPayload } from './tools';
+import { ChatPluginPayload, MessageToolCall } from './tools';
 import { Translate } from './translate';
 
 /**
@@ -52,8 +52,8 @@ export interface ChatMessage extends BaseDataModel {
    */
   parentId?: string;
   plugin?: ChatPluginPayload;
-
   pluginState?: any;
+
   /**
    * quoted other message's id
    */
@@ -63,6 +63,7 @@ export interface ChatMessage extends BaseDataModel {
    */
   role: LLMRoleType;
   sessionId?: string;
+  toolCalls?: MessageToolCall[];
 
   /**
    * 保存到主题的消息
