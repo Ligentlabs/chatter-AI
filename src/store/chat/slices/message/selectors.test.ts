@@ -42,6 +42,14 @@ const mockMessages = [
       type: 'pluginType',
     },
   },
+  {
+    id: 'msg4',
+    content: 'Guide Message',
+    role: 'guide',
+    meta: {
+      avatar: '🤯',
+    },
+  },
 ] as ChatMessage[];
 
 const mockedChats = [
@@ -73,6 +81,14 @@ const mockedChats = [
       arguments: ['arg1', 'arg2'],
       identifier: 'func1',
       type: 'pluginType',
+    },
+  },
+  {
+    id: 'msg4',
+    content: 'Guide Message',
+    role: 'guide',
+    meta: {
+      avatar: '🤯',
     },
   },
 ] as ChatMessage[];
@@ -154,7 +170,7 @@ describe('chatSelectors', () => {
       const state = merge(initialStore, { messages: mockMessages });
 
       const chats = chatSelectors.currentChatsWithHistoryConfig(state);
-      expect(chats).toHaveLength(3);
+      expect(chats).toHaveLength(4);
       expect(chats).toEqual(mockedChats);
     });
     it('should slice the messages according to config, assuming historyCount is mocked to 2', async () => {
@@ -175,14 +191,6 @@ describe('chatSelectors', () => {
       expect(chats).toHaveLength(2);
       expect(chats).toEqual([
         {
-          id: 'msg2',
-          content: 'Goodbye World',
-          role: 'user',
-          meta: {
-            avatar: '😀',
-          },
-        },
-        {
           id: 'msg3',
           content: 'Function Message',
           role: 'function',
@@ -194,6 +202,14 @@ describe('chatSelectors', () => {
             arguments: ['arg1', 'arg2'],
             identifier: 'func1',
             type: 'pluginType',
+          },
+        },
+        {
+          id: 'msg4',
+          content: 'Guide Message',
+          role: 'guide',
+          meta: {
+            avatar: '🤯',
           },
         },
       ]);
