@@ -54,7 +54,7 @@ const ListItem = memo<ListItemProps & { avatar: string; avatarBackground?: strin
         avatar={avatarRender}
         className={styles.container}
         ref={ref}
-        showAction={actions && (isHovering || showAction)}
+        showAction={actions && (isHovering || showAction || mobile)}
         title={<span className={styles.title}>{title}</span>}
         {...(props as any)}
       />
