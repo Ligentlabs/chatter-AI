@@ -48,6 +48,11 @@ declare global {
       ANTHROPIC_API_KEY?: string;
       ANTHROPIC_PROXY_URL?: string;
 
+      // Cohere Provider
+      ENABLED_COHERE?: string;
+      COHERE_API_KEY?: string;
+      COHERE_PROXY_URL?: string;
+
       // Minimax Provider
       ENABLED_MINIMAX?: string;
       MINIMAX_API_KEY?: string;
@@ -122,6 +127,8 @@ export const getProviderConfig = () => {
 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 
+  const COHERE_API_KEY = process.env.COHERE_API_KEY || '';
+
   const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || '';
 
   const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY || '';
@@ -190,6 +197,10 @@ export const getProviderConfig = () => {
     ENABLED_ANTHROPIC: !!ANTHROPIC_API_KEY,
     ANTHROPIC_API_KEY,
     ANTHROPIC_PROXY_URL: process.env.ANTHROPIC_PROXY_URL,
+
+    ENABLED_COHERE: !!COHERE_API_KEY,
+    COHERE_API_KEY,
+    COHERE_PROXY_URL: process.env.COHERE_PROXY_URL,
 
     ENABLED_MINIMAX: !!MINIMAX_API_KEY,
     MINIMAX_API_KEY,

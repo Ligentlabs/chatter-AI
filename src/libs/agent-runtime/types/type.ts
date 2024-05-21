@@ -26,6 +26,7 @@ export enum ModelProvider {
   Azure = 'azure',
   Bedrock = 'bedrock',
   ChatGLM = 'chatglm',
+  Cohere = 'cohere',
   DeepSeek = 'deepseek',
   Google = 'google',
   Groq = 'groq',

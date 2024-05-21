@@ -1,6 +1,7 @@
 import {
   AnthropicProviderCard,
   BedrockProviderCard,
+  CohereProviderCard,
   DeepSeekProviderCard,
   GoogleProviderCard,
   GroqProviderCard,
@@ -81,6 +82,11 @@ export const DEFAULT_LLM_CONFIG: GlobalLLMConfig = {
     enabledModels: filterEnabledModels(BedrockProviderCard),
     region: 'us-east-1',
     secretAccessKey: '',
+  },
+  cohere: {
+    apiKey: '',
+    enabled: false,
+    enabledModels: filterEnabledModels(CohereProviderCard),
   },
   deepseek: {
     apiKey: '',
