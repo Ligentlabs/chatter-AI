@@ -89,7 +89,7 @@
     "@aws-sdk/s3-request-presigner": "^3.583.0",
     "@azure/openai": "1.0.0-beta.12",
     "@cfworker/json-schema": "^1.12.8",
-    "@clerk/localizations": "2.0.0",
+    "@clerk/localizations": "2.4.3",
     "@clerk/nextjs": "^5.1.2",
     "@clerk/themes": "^2.1.7",
     "@google/generative-ai": "^0.11.4",
