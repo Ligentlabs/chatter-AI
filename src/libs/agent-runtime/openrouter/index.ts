@@ -1,4 +1,5 @@
 import { LOBE_DEFAULT_MODEL_LIST } from '@/config/modelProviders';
+import { siteUrl } from '@/const/url';
 
 import { AgentRuntimeErrorType } from '../error';
 import { ModelProvider } from '../types';
@@ -9,7 +10,7 @@ export const LobeOpenRouterAI = LobeOpenAICompatibleFactory({
   baseURL: 'https://openrouter.ai/api/v1',
   constructorOptions: {
     defaultHeaders: {
-      'HTTP-Referer': 'siteUrl',
+      'HTTP-Referer': siteUrl,
       'X-Title': 'Lobe Chat',
     },
   },
