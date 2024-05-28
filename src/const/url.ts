@@ -10,14 +10,10 @@ const isVercelPreview = process.env.VERCEL === '1' && process.env.VERCEL_ENV !==
 
 const inVercelProduction = process.env.VERCEL === '1' && process.env.VERCEL_ENV === 'production';
 
-const vercelPreviewUrl = `https://${process.env.VERCEL_URL}`;
-
-const vercelProductionUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-
 export const siteUrl = inVercelProduction
-  ? vercelProductionUrl
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : isVercelPreview
-    ? vercelPreviewUrl
+    ? `https://${process.env.VERCEL_URL}`
     : 'https://chat-preview.lobehub.com';
 
 export const OFFICIAL_URL = siteUrl;
