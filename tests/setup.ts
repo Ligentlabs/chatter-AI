@@ -1,10 +1,14 @@
 /* eslint-disable import/newline-after-import,import/first */
 import '@testing-library/jest-dom';
 import { theme } from 'antd';
+import * as dotenv from 'dotenv';
 // mock indexedDB to test with dexie
 // refs: https://github.com/dumbmatter/fakeIndexedDB#dexie-and-other-indexeddb-api-wrappers
 import 'fake-indexeddb/auto';
 import React from 'react';
+
+// import env
+dotenv.config();
 
 // only inject in the dom environment
 if (
